@@ -11,10 +11,18 @@ dist/
 build/
 .venv/
 venv/
+.pytest_cache/
+.ruff_cache/
 
-# Node
+# Kotlin / Gradle
+stream-processor/.gradle/
+stream-processor/build/
+stream-processor/out/
+*.class
+*.jar
+
+# Node (if any frontend added later)
 node_modules/
-frontend/dist/
 
 # Terraform
 terraform/.terraform/
@@ -23,20 +31,24 @@ terraform/*.tfstate.backup
 terraform/*.tfplan
 terraform/.terraform.lock.hcl
 
+# Docker
+*.log
+
+# GCP credentials
+credentials/
+*.json
+!package.json
+
+# Data dumps (large files)
+data/
+*.gz
+*.zst
+*.csv
+!scripts/*.sql
+
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 .DS_Store
-
-# Match data (large JSON files)
-producer/match_data/*.json
-!producer/match_data/.gitkeep
-
-# GCP credentials
-*.json
-!package.json
-!package-lock.json
-!tsconfig.json
-!tsconfig.*.json
