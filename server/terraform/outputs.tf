@@ -4,13 +4,13 @@ output "dataset_id" {
 }
 
 output "staging_bucket" {
-  description = "GCS staging bucket name"
-  value       = google_storage_bucket.staging.name
+  description = "GCS staging bucket name (empty if billing resources disabled)"
+  value       = var.enable_billing_resources ? google_storage_bucket.staging[0].name : ""
 }
 
 output "service_account_email" {
-  description = "Pipeline service account email"
-  value       = google_service_account.pipeline.email
+  description = "Pipeline service account email (empty if billing resources disabled)"
+  value       = var.enable_billing_resources ? google_service_account.pipeline[0].email : ""
 }
 
 output "tables" {

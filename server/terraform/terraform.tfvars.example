@@ -1,0 +1,5 @@
+project_id               = "your-gcp-project-id"
+region                   = "US"
+dataset_id               = "overdue"
+enable_billing_resources = false  # set true to create GCS bucket + service account (requires billing)
+gcs_bucket_name          = ""     # leave empty to auto-generate as {project_id}-overdue-staging

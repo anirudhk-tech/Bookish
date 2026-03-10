@@ -145,11 +145,19 @@ resource "google_bigquery_table" "books" {
   clustering = ["genre", "work_key"]
 }
 
+# ======================================================================
+# BILLING-REQUIRED RESOURCES (GCS bucket + service account)
+# Set enable_billing_resources = true in terraform.tfvars to create these.
+# For BigQuery sandbox mode, leave it false -- use gcloud auth instead.
+# ======================================================================
+
 # ----------------------------------------------------------------------
 # GCS Bucket: staging area for raw data dumps
 # ----------------------------------------------------------------------
 
 resource "google_storage_bucket" "staging" {
+  count = var.enable_billing_resources ? 1 : 0
+
   name          = local.bucket_name
   location      = var.region
   force_destroy = true
@@ -177,25 +185,33 @@ resource "google_storage_bucket" "staging" {
 # ----------------------------------------------------------------------
 
 resource "google_service_account" "pipeline" {
+  count = var.enable_billing_resources ? 1 : 0
+
   account_id   = "overdue-pipeline"
   display_name = "Overdue Pipeline Service Account"
   description  = "Used by producer, stream processor, and API to access BigQuery and GCS."
 }
 
 resource "google_project_iam_member" "pipeline_bq_editor" {
+  count = var.enable_billing_resources ? 1 : 0
+
   project = var.project_id
   role    = "roles/bigquery.dataEditor"
-  member  = "serviceAccount:${google_service_account.pipeline.email}"
+  member  = "serviceAccount:${google_service_account.pipeline[0].email}"
 }
 
 resource "google_project_iam_member" "pipeline_bq_job_user" {
+  count = var.enable_billing_resources ? 1 : 0
+
   project = var.project_id
   role    = "roles/bigquery.jobUser"
-  member  = "serviceAccount:${google_service_account.pipeline.email}"
+  member  = "serviceAccount:${google_service_account.pipeline[0].email}"
 }
 
 resource "google_project_iam_member" "pipeline_gcs_admin" {
+  count = var.enable_billing_resources ? 1 : 0
+
   project = var.project_id
   role    = "roles/storage.objectAdmin"
-  member  = "serviceAccount:${google_service_account.pipeline.email}"
+  member  = "serviceAccount:${google_service_account.pipeline[0].email}"
 }
