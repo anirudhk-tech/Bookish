@@ -19,7 +19,7 @@ import requests
 from pathlib import Path
 from dotenv import load_dotenv
 from confluent_kafka import Producer
-from google.cloud import storage
+from google.cloud import storage, bigquery
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -29,6 +29,8 @@ GUTENDEX_API = "https://gutendex.com/books"
 KAFKA_BOOTSTRAP = os.getenv("KAFKA_BOOTSTRAP", "localhost:9092")
 TOPIC = os.getenv("KAFKA_TOPIC_BOOKS_TO_PROCESS", "books-to-process")
 GCS_BUCKET = os.getenv("GCS_BUCKET")
+BQ_PROJECT = os.getenv("GCP_PROJECT_ID")
+BQ_DATASET = os.getenv("BQ_DATASET", "overdue")
 
 
 def get_producer() -> Producer:
@@ -37,6 +39,26 @@ def get_producer() -> Producer:
 
 def get_gcs_client() -> storage.Client:
     return storage.Client()
+
+
+def write_book_to_bq(bq: bigquery.Client, book: dict, storage_path: str, word_count: int):
+    row = {
+        "book_id":      str(book["id"]),
+        "title":        book["title"],
+        "author":       book["authors"][0]["name"] if book.get("authors") else None,
+        "subjects":     book.get("subjects", []),
+        "language":     book.get("languages", [None])[0],
+        "publish_year": None,
+        "word_count":   word_count,
+        "gcs_path":     storage_path if storage_path.startswith("gs://") else None,
+    }
+    table_id = f"{BQ_PROJECT}.{BQ_DATASET}.books"
+    job = bq.load_table_from_json([row], table_id)
+    job.result()
+    if job.errors:
+        log.error(f"BigQuery error writing book {row['book_id']}: {job.errors}")
+    else:
+        log.info(f"  Written to books table: {row['title']}")
 
 
 def upload_text(client: storage.Client, book_id: str, text: str) -> str:
@@ -82,9 +104,11 @@ def main():
 
     use_kafka = not args.dry_run
     use_gcs = not args.local and not args.dry_run
+    use_bq = not args.dry_run
 
     producer = get_producer() if use_kafka else None
     gcs = get_gcs_client() if use_gcs else None
+    bq = bigquery.Client(project=BQ_PROJECT) if use_bq else None
 
     queued = 0
     page = 1
@@ -123,6 +147,9 @@ def main():
 
             queued += 1
             log.info(f"[{queued}/{args.limit}] Stored: {title} (id={book_id})")
+
+            if use_bq:
+                write_book_to_bq(bq, book, storage_path, word_count=len(text.split()))
 
             if use_kafka:
                 msg = {
