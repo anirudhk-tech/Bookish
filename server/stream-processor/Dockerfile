@@ -1,10 +1,6 @@
-FROM gradle:8.10-jdk21 AS build
+FROM python:3.12-slim
 WORKDIR /app
-COPY build.gradle.kts settings.gradle.kts ./
-COPY src ./src
-RUN gradle installDist --no-daemon
-
-FROM eclipse-temurin:21-jre-jammy
-WORKDIR /app
-COPY --from=build /app/build/install/stream-processor ./
-CMD ["./bin/stream-processor"]
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY stream-processor/main.py .
+CMD ["python", "main.py"]

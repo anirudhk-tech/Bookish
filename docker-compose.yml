@@ -64,11 +64,14 @@ services:
     env_file: ./server/.env
 
   # -----------------------------------------------------------------------
-  # Stream Processor (Kotlin) — consumes arc-events, writes to BigQuery
+  # Stream Processor (Python) — consumes arc-events, writes to BigQuery
+  # Kotlin version kept in src/ for reference.
   # Usage: docker compose up stream-processor
   # -----------------------------------------------------------------------
   stream-processor:
-    build: ./server/stream-processor
+    build:
+      context: ./server
+      dockerfile: stream-processor/Dockerfile
     env_file: ./server/.env
     environment:
       - GOOGLE_APPLICATION_CREDENTIALS=/creds/key.json

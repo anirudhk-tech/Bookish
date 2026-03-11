@@ -117,47 +117,38 @@ resource "google_bigquery_table" "characters" {
 }
 
 # ----------------------------------------------------------------------
-# GCS Bucket: raw book texts
+# GCS Bucket + Service Account — requires billing to be enabled.
+# Uncomment when billing is set up at console.cloud.google.com/billing
 # ----------------------------------------------------------------------
 
-resource "google_storage_bucket" "books" {
-  name          = local.bucket_name
-  location      = var.region
-  force_destroy = true
-  storage_class = "STANDARD"
+# resource "google_storage_bucket" "books" {
+#   name          = local.bucket_name
+#   location      = var.region
+#   force_destroy = true
+#   storage_class = "STANDARD"
+#   uniform_bucket_level_access = true
+#   labels = { project = "overdue", env = "dev" }
+# }
 
-  uniform_bucket_level_access = true
+# resource "google_service_account" "pipeline" {
+#   account_id   = "overdue-pipeline"
+#   display_name = "Overdue Pipeline Service Account"
+# }
 
-  labels = {
-    project = "overdue"
-    env     = "dev"
-  }
-}
+# resource "google_project_iam_member" "pipeline_bq_editor" {
+#   project = var.project_id
+#   role    = "roles/bigquery.dataEditor"
+#   member  = "serviceAccount:${google_service_account.pipeline.email}"
+# }
 
-# ----------------------------------------------------------------------
-# Service Account
-# ----------------------------------------------------------------------
+# resource "google_project_iam_member" "pipeline_bq_job_user" {
+#   project = var.project_id
+#   role    = "roles/bigquery.jobUser"
+#   member  = "serviceAccount:${google_service_account.pipeline.email}"
+# }
 
-resource "google_service_account" "pipeline" {
-  account_id   = "overdue-pipeline"
-  display_name = "Overdue Pipeline Service Account"
-  description  = "Used by ingester, chunker, NLP worker, stream processor, and API."
-}
-
-resource "google_project_iam_member" "pipeline_bq_editor" {
-  project = var.project_id
-  role    = "roles/bigquery.dataEditor"
-  member  = "serviceAccount:${google_service_account.pipeline.email}"
-}
-
-resource "google_project_iam_member" "pipeline_bq_job_user" {
-  project = var.project_id
-  role    = "roles/bigquery.jobUser"
-  member  = "serviceAccount:${google_service_account.pipeline.email}"
-}
-
-resource "google_project_iam_member" "pipeline_gcs_admin" {
-  project = var.project_id
-  role    = "roles/storage.objectAdmin"
-  member  = "serviceAccount:${google_service_account.pipeline.email}"
-}
+# resource "google_project_iam_member" "pipeline_gcs_admin" {
+#   project = var.project_id
+#   role    = "roles/storage.objectAdmin"
+#   member  = "serviceAccount:${google_service_account.pipeline.email}"
+# }
