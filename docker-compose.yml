@@ -1,7 +1,6 @@
 services:
 
   # -----------------------------------------------------------------------
-  # Kafka (run this on the dedicated host machine)
   # Usage: KAFKA_HOST_IP=192.168.1.50 docker compose up -d kafka
   # -----------------------------------------------------------------------
   kafka:
